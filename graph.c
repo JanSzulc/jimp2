@@ -123,30 +123,6 @@ Wezel* wczytaj_liste_sasiedztwa(FILE* plik, int* liczba_wezlow) {
     return lista;
 }
 
-// Funkcja wypisujaca macierz na ekran
-void wypisz_macierz(int** macierz, int rozmiar) {
-    for (int i = 0; i < rozmiar; i++) {
-        for (int j = 0; j < rozmiar; j++) {
-            printf("%d ", macierz[i][j]);
-        }
-        printf("\n");
-    }
-}
-
-// Funkcja wypisujaca liste sasiedztwa
-void wypisz_liste_sasiedztwa(Wezel* lista, int liczba_wezlow) {
-    for (int i = 0; i < liczba_wezlow; i++) {
-        if (lista[i].liczba_sasiadow > 0) {
-            printf("Wezel %d: ", i);
-            for (int j = 0; j < lista[i].liczba_sasiadow; j++) {
-                printf("%d", lista[i].sasiedzi[j]);
-                if (j < lista[i].liczba_sasiadow - 1) printf(", ");
-            }
-            printf("\n");
-        }
-    }
-}
-
 // Funkcja zwalniajaca pamiec macierzy
 void zwolnij_macierz(int** macierz, int rozmiar) {
     for (int i = 0; i < rozmiar; i++) {

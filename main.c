@@ -41,13 +41,9 @@ int main(int argc, char* argv[]) {
 
     // Wczytanie macierzy wezlow z pliku
     int** macierz = wczytaj_macierz_wezlow(plik, &rozmiar, &wezly);
-    printf("Macierz wezlow:\n");
-    wypisz_macierz(macierz, rozmiar);
 
     // Wczytanie listy sasiedztwa
     Wezel* lista = wczytaj_liste_sasiedztwa(plik, &rozmiar);
-    printf("\nLista sasiedztwa:\n");
-    wypisz_liste_sasiedztwa(lista, rozmiar);
 
     // Wlasciwy podzial grafu na klastry
     spectral_clustering(lista, rozmiar, liczba_klastrow, margines, wezly, argv[2], zapis_bin);
