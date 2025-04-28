@@ -26,21 +26,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (num_parts < 2) {
-        print_error("Błąd: Liczba części musi być większa od 1", 4);
-    }
-
     Graph *graph = load_graph(input_file);
     if (!graph) {
-        print_error("Błąd: Niepoprawny format pliku .csrrg", 2);
+        print_error("Błąd: Nie można wczytać grafu", 2);
     }
+    save_graph_as_txt("graf.txt", graph);
+
 
     int *partition = partition_graph(graph, num_parts, margin);
+    zapisz_wyniki(output_file, partition, graph, binary_output);
 
-    save_partition(output_file, partition, graph->num_nodes, binary_output);
-
-    free_graph(graph);
     free(partition);
-
+    free_graph(graph);
     return 0;
 }

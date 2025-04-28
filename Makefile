@@ -2,6 +2,8 @@ CC=gcc
 CFLAGS=-Wall -Wextra -std=c11
 OBJ=main.o graph.o partition.o utils.o
 
+all: graph_partition
+
 graph_partition: $(OBJ)
 	$(CC) $(CFLAGS) -o graph_partition $(OBJ)
 

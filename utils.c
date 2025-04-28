@@ -7,17 +7,24 @@ void print_error(const char *message, int exit_code) {
     exit(exit_code);
 }
 
-void save_partition(const char *filename, int *partition, int num_nodes, int binary) {
-    FILE *file;
+void zapisz_wyniki(const char *filename, int *partition, Graph *graph, int binary) {
+    FILE *file = fopen(filename, binary ? "wb" : "w");
+    if (!file) print_error("Nie mozna otworzyc pliku do zapisu", 3);
+
     if (binary) {
-        file = fopen(filename, "wb");
-        if (!file) print_error("Błąd: Nie można otworzyć pliku do zapisu (binarnie)", 3);
-        fwrite(partition, sizeof(int), num_nodes, file);
+        fwrite(partition, sizeof(int), graph->num_nodes, file);
     } else {
-        file = fopen(filename, "w");
-        if (!file) print_error("Błąd: Nie można otworzyć pliku do zapisu", 3);
-        for (int i = 0; i < num_nodes; i++) {
-            fprintf(file, "%d\n", partition[i]);
+        fprintf(file, "# Wierzcholki (ID czesc)\n");
+        for (int i = 0; i < graph->num_nodes; i++) {
+            fprintf(file, "%d %d\n", graph->id_list[i], partition[i]);
+        }
+        fprintf(file, "\n# Krawedzie (ID1 ID2)\n");
+        for (int i = 0; i < graph->num_nodes; i++) {
+            for (int j = i + 1; j < graph->num_nodes; j++) {
+                if (graph->adjacency_matrix[i][j]) {
+                    fprintf(file, "%d %d\n", graph->id_list[i], graph->id_list[j]);
+                }
+            }
         }
     }
     fclose(file);
