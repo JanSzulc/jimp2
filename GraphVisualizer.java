@@ -1,97 +1,130 @@
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.Group;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
-import javafx.stage.Stage;
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-public class GraphVisualizer extends Application {
 
-    static Map<Integer, Integer> nodePart = new HashMap<>();
-    static List<int[]> edges = new ArrayList<>();
+public class GraphVisualizer extends JPanel {
+    static class Node {
+        int id;
+        int col;
+        int row;
+        int cluster;
+        List<Integer> connections = new ArrayList<>();
 
-    @Override
-    public void start(Stage stage) {
-        Group root = new Group();
-
-        int radius = 200;
-        int centerX = 300;
-        int centerY = 300;
-        int n = nodePart.size();
-
-        Map<Integer, Circle> nodeCircles = new HashMap<>();
-
-        for (int i = 0; i < n; i++) {
-            double angle = 2 * Math.PI * i / n;
-            double x = centerX + radius * Math.cos(angle);
-            double y = centerY + radius * Math.sin(angle);
-
-            Color color;
-            switch (nodePart.get(i)) {
-                case 0:
-                    color = Color.RED;
-                    break;
-                case 1:
-                    color = Color.GREEN;
-                    break;
-                case 2:
-                    color = Color.BLUE;
-                    break;
-                default:
-                    color = Color.BLACK;
-                    break;
-            }
-
-            Circle circle = new Circle(x, y, 10, color);
-            nodeCircles.put(i, circle);
-            root.getChildren().add(circle);
+        Node(int id, int col, int row, int cluster) {
+            this.id = id;
+            this.col = col;
+            this.row = row;
+            this.cluster = cluster;
         }
-
-        // Teraz rysujemy krawędzie
-        for (int[] edge : edges) {
-            Circle c1 = nodeCircles.get(edge[0]);
-            Circle c2 = nodeCircles.get(edge[1]);
-            Line line = new Line(c1.getCenterX(), c1.getCenterY(), c2.getCenterX(), c2.getCenterY());
-            line.setStroke(Color.GRAY);
-            root.getChildren().add(line);
-        }
-
-        Scene scene = new Scene(root, 600, 600);
-        stage.setTitle("Graph Visualization (structured wynik.txt)");
-        stage.setScene(scene);
-        stage.show();
     }
 
-    public static void main(String[] args) {
-        try (BufferedReader br = new BufferedReader(new FileReader("wynik.txt"))) {
-            String line;
-            boolean readingNodes = true;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                if (line.startsWith("#")) continue; // komentarze
+    Map<Integer, Node> nodes = new HashMap<>();
+    int cellSize = 50; // rozmiar jednej "kratki" w macierzy
 
-                String[] parts = line.split("\\s+");
-                if (parts.length == 2) {
-                    int a = Integer.parseInt(parts[0]);
-                    int b = Integer.parseInt(parts[1]);
-                    if (readingNodes) {
-                        nodePart.put(a, b);
-                    } else {
-                        edges.add(new int[]{a, b});
-                    }
-                } else {
-                    readingNodes = false; // po pustej linii przechodzimy do krawędzi
+    public GraphVisualizer(String filename) throws IOException {
+        loadGraph(filename);
+    }
+
+    private void loadGraph(String filename) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(";");
+            int id = Integer.parseInt(parts[0]);
+            int col = Integer.parseInt(parts[1]);
+            int row = Integer.parseInt(parts[2]);
+            int cluster = Integer.parseInt(parts[3]);
+            Node node = new Node(id, col, row, cluster);
+            if (parts.length > 4) {
+                String[] conn = parts[4].split(",");
+                for (String c : conn) {
+                    node.connections.add(Integer.parseInt(c));
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Błąd podczas czytania wynik.txt: " + e.getMessage());
-            return;
+            nodes.put(id, node);
+        }
+        reader.close();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(new BasicStroke(2));
+
+        if (nodes.isEmpty()) return;
+
+        // Znajdź zakresy
+        int minCol = Integer.MAX_VALUE, maxCol = Integer.MIN_VALUE;
+        int minRow = Integer.MAX_VALUE, maxRow = Integer.MIN_VALUE;
+        for (Node node : nodes.values()) {
+            if (node.col < minCol) minCol = node.col;
+            if (node.col > maxCol) maxCol = node.col;
+            if (node.row < minRow) minRow = node.row;
+            if (node.row > maxRow) maxRow = node.row;
         }
 
-        launch();
+        int graphWidth = (maxCol - minCol + 1) * cellSize;
+        int graphHeight = (maxRow - minRow + 1) * cellSize;
+
+        int offsetX = (getWidth() - graphWidth) / 2 - minCol * cellSize;
+        int offsetY = (getHeight() - graphHeight) / 2 - minRow * cellSize;
+
+        // Najpierw krawędzie
+        for (Node node : nodes.values()) {
+            for (int connId : node.connections) {
+                Node target = nodes.get(connId);
+                if (target != null) {
+                    g2.setColor(Color.LIGHT_GRAY);
+                    g2.drawLine(
+                        node.col * cellSize + offsetX,
+                        node.row * cellSize + offsetY,
+                        target.col * cellSize + offsetX,
+                        target.row * cellSize + offsetY
+                    );
+                }
+            }
+        }
+
+        // Teraz węzły
+        for (Node node : nodes.values()) {
+            Color color = getColorForCluster(node.cluster);
+            g2.setColor(color);
+            int x = node.col * cellSize + offsetX - 5;
+            int y = node.row * cellSize + offsetY - 5;
+            g2.fillOval(x, y, 10, 10);
+
+            g2.setColor(Color.BLACK);
+            g2.drawString(String.valueOf(node.id), x - 5, y - 5);
+        }
+    }
+
+
+    private Color getColorForCluster(int cluster) {
+        // Proste kolorowanie klastrów (modulo, żeby różne kolory)
+        switch (cluster % 6) {
+            case 0: return Color.RED;
+            case 1: return Color.BLUE;
+            case 2: return Color.GREEN;
+            case 3: return Color.ORANGE;
+            case 4: return Color.MAGENTA;
+            case 5: return Color.CYAN;
+            default: return Color.GRAY;
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        JFrame frame = new JFrame("Graph Visualizer");
+        GraphVisualizer panel = new GraphVisualizer("wynik.txt");
+        frame.add(panel);
+        frame.setSize(1200, 1200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
     }
 }

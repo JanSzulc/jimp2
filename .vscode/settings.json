@@ -1,5 +1,8 @@
 {
     "java.project.referencedLibraries": [
         "C:/javafx-sdk-21.0.7/lib/**/*.jar"
-    ]
+    ],
+    "files.associations": {
+        "math.h": "c"
+    }
 }
